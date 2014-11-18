@@ -51,7 +51,7 @@ func main() {
 
 		cmd := exec.Command(os.Args[0],
 			fmt.Sprintf("-fd=%d", newFd))
-		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
 		log.Println("starting cmd:", cmd.Args)
 		if err := cmd.Start(); err != nil {
