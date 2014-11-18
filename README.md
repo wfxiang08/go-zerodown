@@ -11,3 +11,5 @@ go build example/main.go
 ./main &
 curl http://localhost:8000/upgrade
 ```
+
+Then you should see the `main` process relaunched and old one quit without service shutdown.
