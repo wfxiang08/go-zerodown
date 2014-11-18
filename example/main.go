@@ -49,8 +49,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		cmd := exec.Command(os.Args[0],
-			fmt.Sprintf("-fd=%d", newFd))
+		cmd := exec.Command(os.Args[0], fmt.Sprintf("-fd=%d", newFd))
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
 		log.Println("starting cmd:", cmd.Args)
@@ -63,14 +62,13 @@ func main() {
 
 	log.Println("Serving on", server.Addr)
 	err = server.Serve(listener)
-
-	if listener.IsClosed() {
-		if err := listener.Wait(time.Second * 10); err != nil {
-			log.Println("wait error:", err)
-		} else {
-			log.Println("quit")
-		}
-	} else if err != nil {
+	if !listener.IsClosed() && err != nil {
 		log.Fatal(err)
+	}
+
+	if err := listener.Wait(time.Second * 10); err != nil {
+		log.Println("wait error:", err)
+	} else {
+		log.Println("quit")
 	}
 }
