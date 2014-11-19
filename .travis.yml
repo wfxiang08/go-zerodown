@@ -4,4 +4,5 @@ install:
   - go get "github.com/smartystreets/goconvey/convey"
   - go get -v .
 script:
+  - go test -v ./...
   - go test -race -v

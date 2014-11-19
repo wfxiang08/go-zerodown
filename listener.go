@@ -14,6 +14,8 @@ type fileListener interface {
 	File() (f *os.File, err error)
 }
 
+// A Listener is a network listener which can duplicate it's file descrption and close gracefully.
+// Multiple goroutines may invoke methods on a Listener simultaneously except DupFd and Wait.
 type Listener struct {
 	fileListener
 	quit          chan struct{}
@@ -23,6 +25,7 @@ type Listener struct {
 	counter       int
 }
 
+// New creates a Listener with given listener l.
 func New(l net.Listener) (*Listener, error) {
 	fl, ok := l.(fileListener)
 	if !ok {
@@ -34,6 +37,7 @@ func New(l net.Listener) (*Listener, error) {
 	}, nil
 }
 
+// Listen announces on the local network address laddr, and return a Listener. See net.Listener for the syntax.
 func Listen(lnet, laddr string) (*Listener, error) {
 	l, err := net.Listen(lnet, laddr)
 	if err != nil {
@@ -42,6 +46,8 @@ func Listen(lnet, laddr string) (*Listener, error) {
 	return New(l)
 }
 
+// FdListener returns a copy of the network listener corresponding to the open file descriptor fd.
+// The file descrption fd will be closed after call.
 func FdListen(fd int) (*Listener, error) {
 	f := os.NewFile(uintptr(fd), "listen socket")
 	defer f.Close()
@@ -52,6 +58,7 @@ func FdListen(fd int) (*Listener, error) {
 	return New(l)
 }
 
+// Accept waits for and returns the next connection to the listener.
 func (l *Listener) Accept() (net.Conn, error) {
 	c, err := l.fileListener.Accept()
 	if err != nil {
@@ -63,21 +70,14 @@ func (l *Listener) Accept() (net.Conn, error) {
 	return newConn(c, l), nil
 }
 
-func (l *Listener) DupFd() (int, error) {
-	f, err := l.fileListener.File()
-	if err != nil {
-		return 0, err
-	}
-
-	return syscall.Dup(int(f.Fd()))
-}
-
+// IsClosed returns a boolean to indicate whether Listener is closed.
 func (l *Listener) IsClosed() bool {
 	l.closeLocker.RLock()
 	defer l.closeLocker.RUnlock()
 	return l.isClosed
 }
 
+// Close will closed Listener. It won't Accept connection any more.
 func (l *Listener) Close() error {
 	l.closeLocker.Lock()
 	defer l.closeLocker.Unlock()
@@ -85,6 +85,9 @@ func (l *Listener) Close() error {
 	return l.fileListener.Close()
 }
 
+// Wait waits all connections created by Listener closed.
+// If after timeout reach but not all connection closed, it will return time out error.
+// This method can't invoke simultaneously.
 func (l *Listener) Wait(timeout time.Duration) error {
 	if !l.IsClosed() {
 		return errors.New("not closed")
@@ -100,6 +103,17 @@ func (l *Listener) Wait(timeout time.Duration) error {
 	}
 
 	return nil
+}
+
+// DupFd returns the integer Unix file descriptor duplicated from Listener.
+// This method can't invoke simultaneously.
+func (l *Listener) DupFd() (int, error) {
+	f, err := l.fileListener.File()
+	if err != nil {
+		return 0, err
+	}
+
+	return syscall.Dup(int(f.Fd()))
 }
 
 func (l *Listener) inc() {
