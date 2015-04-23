@@ -1,8 +1,6 @@
 package zerodown
 
-import (
-	"net"
-)
+import "net"
 
 type conn struct {
 	net.Conn
@@ -16,7 +14,7 @@ func newConn(c net.Conn, listener *Listener) conn {
 	}
 }
 
-func (w conn) Close() error {
-	w.listener.dec()
-	return w.Conn.Close()
+func (c conn) Close() error {
+	c.listener.dec()
+	return c.Conn.Close()
 }

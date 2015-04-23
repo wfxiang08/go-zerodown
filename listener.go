@@ -46,7 +46,7 @@ func Listen(lnet, laddr string) (*Listener, error) {
 	return New(l)
 }
 
-// FdListener returns a copy of the network listener corresponding to the open file descriptor fd.
+// FdListen returns a copy of the network listener corresponding to the open file descriptor fd.
 // The file descrption fd will be closed after call.
 func FdListen(fd int) (*Listener, error) {
 	f := os.NewFile(uintptr(fd), "listen socket")
